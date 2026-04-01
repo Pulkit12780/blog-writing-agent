@@ -12,6 +12,10 @@ from pathlib import Path
 load_dotenv()
 
 
+class ResearchDecision(BaseModel):
+    need_research: bool
+    queries: List[str] = []
+
 class Task(BaseModel):
     id: str
     title: str
@@ -32,6 +36,8 @@ class State(TypedDict):
 
 #model
 model = ChatOpenAI(model = 'gpt-4.1-mini')
+
+
 
 #orchestrator node
 def orchestrator(state: State):
@@ -105,18 +111,6 @@ g.add_edge("worker", "reducer")
 g.add_edge("reducer", END)
 
 app = g.compile()
-
-print(app.invoke({'topic': 'Self attention' }))
-
-
-#start
-#orchestration
-#plan object -> title, list of tasks
-#task object -> title, id, description about one section of the blog
-
-
-#worker node: orchestrator - worker flow. dynaically n worker nodes will be created which will run in parallel
-#reducer -> sticth and create md file
 
 
 

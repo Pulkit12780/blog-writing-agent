@@ -13,11 +13,11 @@ from langchain_tavily import TavilySearch
 
 load_dotenv()
 
-# -------------------------
-# MODELS
-# -------------------------
 
+# model
 model = ChatOpenAI(model = 'gpt-4o-mini')
+
+#schema
 
 class ResearchDecision(BaseModel):
     need_research: bool
@@ -41,12 +41,8 @@ class State(TypedDict, total=False):
     sections: Annotated[List[str], operator.add]
     final: str
 
-model = ChatOpenAI(model="gpt-4.1-mini")
 
-# -------------------------
-# ROUTER
-# -------------------------
-
+#router node -> decide whether research is requires or not
 def router(state: State) -> dict:
     topic = state["topic"]
 
@@ -68,10 +64,8 @@ def router(state: State) -> dict:
         "queries": decision.queries
     }
 
-# -------------------------
-# RESEARCH
-# -------------------------
 
+# research node to do research
 def research(state: State):
     queries = state.get("queries", [])
     if not queries:
@@ -88,10 +82,8 @@ def research(state: State):
 
     return {"research": "\n\n".join(chunks)}
 
-# -------------------------
-# ORCHESTRATOR
-# -------------------------
 
+#orchestrator to plan
 def orchestrator(state: State):
     topic = state["topic"]
 
@@ -105,10 +97,8 @@ def orchestrator(state: State):
 
     return {"plan": plan}
 
-# -------------------------
-# FANOUT
-# -------------------------
 
+#fanout: The function returns a list of Send() instructions. Each Send() means: “Send this message to the worker node in the graph.”
 def fanout(state: State):
     return [
         Send("worker", {
@@ -120,10 +110,8 @@ def fanout(state: State):
         for task in state["plan"].tasks
     ]
 
-# -------------------------
-# WORKER
-# -------------------------
 
+#worker node
 def worker(payload: dict) -> dict:
     task = payload["task"]
     topic = payload["topic"]
@@ -148,9 +136,7 @@ def worker(payload: dict) -> dict:
 
     return {"sections": [section_md]}
 
-# -------------------------
-# REDUCER
-# -------------------------
+
 
 def reducer(state: State) -> dict:
     title = state["plan"].blog_title
@@ -161,9 +147,8 @@ def reducer(state: State) -> dict:
     Path(f"{title.lower().replace(' ','_')}.md").write_text(final_md)
     return {"final": final_md}
 
-# -------------------------
-# GRAPH BUILD
-# -------------------------
+
+#graph
 
 g = StateGraph(State)
 g.add_node("router", router)
